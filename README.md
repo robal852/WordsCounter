@@ -4,6 +4,9 @@ This project implements sequential word processing. It reads a file, extracts un
 It is written in C++17 and utilizes Google Test
 
 To build and run call from build dir:
+
 cmake ..
+
 make
+
 ./wordsCounter ../src/words.txt

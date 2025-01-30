@@ -19,6 +19,6 @@ public:
 		duration = end - start;
 
 		float ms = duration.count() * 1000.0f;
-		std::cout << "Timer took " << ms << "s\n";
+		std::cout << "Timer took " << ms << "ms\n";
 	}
 };
