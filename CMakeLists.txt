@@ -16,14 +16,14 @@ FetchContent_MakeAvailable(googletest)
 set(SOURCE_FILES
       src/main.cpp
       src/sequentialProcessing.cpp
-      src/multiProcessing.cpp
+      src/MultiThreadedWordCounter.cpp
 )
 
 set(HEADER_FILES
     src/Timer.hpp
     src/sequentialProcessing.hpp
     src/definitions.hpp
-    src/multiProcessing.hpp
+    src/MultiThreadedWordCounter.hpp
 )
 
 add_executable(wordsCounter ${SOURCE_FILES} ${HEADER_FILES})
