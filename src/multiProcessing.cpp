@@ -1,4 +1,5 @@
 // Version with MULTITHREADING
+#include <iostream>
 #include <unordered_set>
 #include <string>
 #include <queue>
@@ -14,33 +15,35 @@
 std::queue<std::string> processing_queue;
 std::mutex mtx;
 std::condition_variable queue_cv;
-bool finished_reading = false;
+std::atomic<bool> finished_reading{ false };
 
-void count_unique_words_worker(std::unordered_set<std::string>& unique_words) {
-	while (true) {
-		std::string data;
+void count_unique_words_worker(std::unordered_set<std::string>& local_words) {
+    try {
+        while (true) {
+            std::string data;
 
-        {
-            std::unique_lock<std::mutex> lock(mtx);
-            queue_cv.wait(lock, [] { return !processing_queue.empty() || finished_reading; });
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                queue_cv.wait(lock, [] { return !processing_queue.empty() || finished_reading.load(); });
 
-            if (processing_queue.empty() && finished_reading) {
-                return; //finished
-            }         
+                if (processing_queue.empty() && finished_reading.load()) {
+                    return; //finished
+                }
 
-            data = std::move(processing_queue.front()); // get data to process
-            processing_queue.pop();
+                data = std::move(processing_queue.front()); // get data to process
+                processing_queue.pop();
+            }
+
+            //std::cout << "Thread " << std::this_thread::get_id() << " is processing data.\n";
+
+            count_unique_words(data, local_words);
         }
-
-        //std::cout << "Thread " << std::this_thread::get_id() << " is processing data.\n";
-
-        std::unordered_set<std::string> local_words;
-        count_unique_words(data, local_words);
-
-        {
-            std::unique_lock<std::mutex> lock(mtx);
-            unique_words.insert(local_words.begin(), local_words.end());
-        }
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Exception in thread " << std::this_thread::get_id() << ": " << ex.what() << std::endl;
+    }
+    catch (...) {
+        std::cerr << "Unknown exception in thread " << std::this_thread::get_id() << std::endl;
     }
 }
 
@@ -68,10 +71,6 @@ void multi_file_processing(std::ifstream& file) {
         queue_cv.notify_one();
     }
 
-    //finish
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        finished_reading = true;
-    }
+    finished_reading.store(true);
     queue_cv.notify_all();
 }
